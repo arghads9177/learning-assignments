@@ -35,15 +35,81 @@ class MorphologicalVisualComparison:
     operations affect binary images with various structuring elements.
     """
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, custom_image_path=None):
         """
         Initialize the visual comparison tool.
 
         Args:
             output_dir (str): Directory to save visualizations.
+            custom_image_path (str): Optional path to custom image for analysis.
+                If provided, this image will be used instead of generating one.
         """
         self.output_dir = output_dir
+        self.custom_image_path = custom_image_path
         os.makedirs(output_dir, exist_ok=True)
+
+    def load_custom_image(self, image_path, threshold_value=127):
+        """
+        Load and preprocess a custom image for morphological analysis.
+
+        Converts the image to binary (black and white) format suitable for
+        morphological operations. If the image is already binary, it's used
+        as-is. Otherwise, it's converted to grayscale and thresholded.
+
+        Args:
+            image_path (str): Path to the custom image.
+            threshold_value (int): Threshold value for binarization (0-255, default: 127).
+                Only used if image is not already binary.
+
+        Returns:
+            tuple: (clean_mask, corrupted_mask) where:
+                - clean_mask: Original binary image (no corruption added)
+                - corrupted_mask: Same as clean_mask (no synthetic noise added)
+
+        Prints:
+            - Image loading confirmation
+            - Preprocessing details
+            - Binary image statistics
+
+        Raises:
+            FileNotFoundError: If image file doesn't exist.
+            ValueError: If image cannot be loaded.
+        """
+        print("\n" + "="*70)
+        print("LOADING CUSTOM IMAGE")
+        print("="*70)
+
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image file not found: {image_path}")
+
+        # Load image
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError(f"Failed to load image: {image_path}")
+
+        print(f"✓ Image loaded: {image_path}")
+        print(f"  Original shape: {img.shape}")
+        print(f"  File size: {os.path.getsize(image_path) / 1024:.2f} KB")
+
+        # Convert to grayscale if needed
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            print(f"✓ Converted to grayscale")
+        else:
+            gray = img
+
+        # Convert to binary
+        print(f"\nBinarizing image (threshold: {threshold_value})...")
+        _, binary = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+
+        print(f"✓ Image converted to binary")
+        print(f"  Binary shape: {binary.shape}")
+        print(f"  Black pixels: {np.count_nonzero(binary == 0)}")
+        print(f"  White pixels: {np.count_nonzero(binary == 255)}")
+
+        # For custom images, use the binary as both clean and corrupted
+        # (user can add corruption manually if desired)
+        return binary, binary
 
     def create_corrupted_binary_mask(self, width=400, height=400):
         """
@@ -399,23 +465,43 @@ class MorphologicalVisualComparison:
         print(f"   - Non-zero pixels: {black_hat_black}")
         print(f"   - Use case: Find surface imperfections")
 
-    def run_complete_analysis(self, kernel_size=5):
+    def run_complete_analysis(self, kernel_size=5, use_custom=None, threshold=127):
         """
         Execute complete morphological analysis with all kernel types.
 
+        Can use either a generated synthetic mask or a custom image.
+
         Args:
             kernel_size (int): Size of structuring elements (default: 5).
+            use_custom (bool): If True, use custom image; if False, generate mask.
+                If None, automatically detect based on custom_image_path (default: None).
+            threshold (int): Threshold value for binarizing custom images (default: 127).
 
         Prints:
             - Progress for each kernel type
             - Summary of all analyses
+            - Source of input (generated or custom)
+
+        Raises:
+            ValueError: If use_custom is True but no custom image path provided.
         """
         print("\n" + "="*70)
         print("MORPHOLOGICAL VISUAL COMPARISON EXERCISE")
         print("="*70)
 
-        # Create corrupted binary mask
-        clean_mask, corrupted_mask = self.create_corrupted_binary_mask()
+        # Determine image source
+        if use_custom is None:
+            use_custom = self.custom_image_path is not None
+
+        if use_custom:
+            if not self.custom_image_path:
+                raise ValueError("Custom image path not provided. "
+                               "Set custom_image_path in __init__ or provide use_custom=False")
+            print(f"\n→ Using CUSTOM IMAGE: {self.custom_image_path}")
+            clean_mask, corrupted_mask = self.load_custom_image(self.custom_image_path, threshold)
+        else:
+            print(f"\n→ Using GENERATED SYNTHETIC MASK")
+            clean_mask, corrupted_mask = self.create_corrupted_binary_mask()
 
         # Save original masks
         clean_path = os.path.join(self.output_dir, 'clean_mask.png')
@@ -456,14 +542,86 @@ def main():
 
     Creates comprehensive visualizations of morphological operations
     with different structuring elements.
+
+    Supports both synthetic masks (generated) and custom images.
     """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Morphological Operations Visual Comparison',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+USAGE EXAMPLES:
+
+1. Generate synthetic corrupted mask:
+   python morphological_visual_comparison.py
+
+2. Use custom image:
+   python morphological_visual_comparison.py --custom /path/to/image.jpg
+
+3. Custom image with threshold:
+   python morphological_visual_comparison.py --custom document.png --threshold 150
+
+4. Custom kernel size:
+   python morphological_visual_comparison.py --custom image.jpg --kernel-size 7
+
+5. Custom output directory:
+   python morphological_visual_comparison.py --custom image.jpg --output-dir ./results
+
+IMAGE REQUIREMENTS:
+- Format: PNG, JPG, BMP, TIFF, etc. (anything OpenCV can read)
+- Size: Any (recommended: 300-600 pixels for clarity)
+- Color: Color or grayscale (both are converted to binary)
+- Content: Text, shapes, or any image to analyze
+
+THRESHOLD GUIDE:
+- 100-120: Good for dark images
+- 127-150: Standard (default: 127)
+- 150-200: Good for light images
+        """
+    )
+
+    parser.add_argument('--custom', type=str, help='Path to custom image for analysis')
+    parser.add_argument('--threshold', type=int, default=127,
+                       help='Binarization threshold (0-255, default: 127)')
+    parser.add_argument('--kernel-size', type=int, default=5,
+                       help='Structuring element size (default: 5)')
+    parser.add_argument('--output-dir', type=str,
+                       help='Output directory for visualizations')
+
+    args = parser.parse_args()
+
     # Define output directory
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(current_dir, 'output_morphology')
+    if args.output_dir:
+        output_dir = args.output_dir
+    else:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(current_dir, 'output_morphology')
 
     # Create and run comparison
-    comparison = MorphologicalVisualComparison(output_dir)
-    comparison.run_complete_analysis(kernel_size=5)
+    comparison = MorphologicalVisualComparison(output_dir, custom_image_path=args.custom)
+
+    print("\n" + "="*70)
+    print("MORPHOLOGICAL OPERATIONS VISUAL COMPARISON")
+    print("="*70)
+
+    if args.custom:
+        print(f"\nConfiguration:")
+        print(f"  Input: Custom image")
+        print(f"  Path: {args.custom}")
+        print(f"  Threshold: {args.threshold}")
+        print(f"  Kernel size: {args.kernel_size}×{args.kernel_size}")
+        print(f"  Output: {output_dir}")
+    else:
+        print(f"\nConfiguration:")
+        print(f"  Input: Generated synthetic mask")
+        print(f"  Kernel size: {args.kernel_size}×{args.kernel_size}")
+        print(f"  Output: {output_dir}")
+
+    # Run analysis
+    comparison.run_complete_analysis(kernel_size=args.kernel_size,
+                                     use_custom=args.custom is not None,
+                                     threshold=args.threshold)
 
 
 if __name__ == "__main__":
