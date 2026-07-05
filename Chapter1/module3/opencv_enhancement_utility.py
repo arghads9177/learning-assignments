@@ -455,7 +455,8 @@ def main():
 
     # Define paths
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    image_path = os.path.join(current_dir, 'dark_sample_image.jpg')
+    # image_path = os.path.join(current_dir, 'dark_sample_image.jpg')
+    image_path = os.path.join(current_dir, 'dark_sample_3.jpg')
     output_dir = os.path.join(current_dir, 'output_enhancements')
 
     # 1. Load dark image

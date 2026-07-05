@@ -560,7 +560,8 @@ def main():
 
     # Define paths
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    image_path = os.path.join(current_dir, 'test_image.jpg')
+    # image_path = os.path.join(current_dir, 'test_image.jpg')
+    image_path = os.path.join(current_dir, 'sample_image.jpeg')
     output_dir = os.path.join(current_dir, 'output_edge_detection')
 
     # Create application
