@@ -591,12 +591,18 @@ Examples:
                        help='Minimum coin area threshold in pixels (default: 500)')
     parser.add_argument('--kernel-size', type=int, default=9,
                        help='Kernel size for morphological operations (default: 9)')
-    parser.add_argument('--output-dir', type=str, default='./output_coins',
-                       help='Output directory for results (default: ./output_coins)')
+    parser.add_argument('--output-dir', type=str, default=None,
+                       help='Output directory for results (default: module9/output_coins)')
 
     args = parser.parse_args()
 
-    counter = AutomatedCoinCounter(args.output_dir)
+    if args.output_dir:
+        output_dir = args.output_dir
+    else:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(current_dir, 'output_coins')
+
+    counter = AutomatedCoinCounter(output_dir)
     counter.run_analysis(args.custom, args.min_area, args.kernel_size)
 
 
