@@ -1,0 +1,36 @@
+======================================================================
+AUTOMATED COIN COUNTER - DETAILED ANALYSIS REPORT
+======================================================================
+Generated: 2026-07-06 10:22:39
+Image Resolution: 1920x1422 pixels
+Processing Time: 15.09 seconds
+Total Coins Detected: 10
+----------------------------------------------------------------------
+
+COIN STATISTICS:
+  Average Area: 130309.20 px²
+  Std Dev Area: 5570.23 px²
+  Min Area: 122841.00 px²
+  Max Area: 144733.50 px²
+
+  Average Radius: 206.10 px
+  Std Dev Radius: 4.39 px
+  Min Radius: 200.00 px
+  Max Radius: 217.00 px
+
+DETECTED COIN LOCATIONS:
+  Coin  1: Position=( 738, 1169) | Area=122841 px² | Radius=200 px
+  Coin  2: Position=(1225, 1177) | Area=144734 px² | Radius=217 px
+  Coin  3: Position=(1216,  702) | Area=124813 px² | Radius=201 px
+  Coin  4: Position=( 269,  704) | Area=127608 px² | Radius=204 px
+  Coin  5: Position=(1676,  700) | Area=132108 px² | Radius=207 px
+  Coin  6: Position=( 737,  700) | Area=130211 px² | Radius=206 px
+  Coin  7: Position=(1222,  235) | Area=128700 px² | Radius=205 px
+  Coin  8: Position=(1677,  234) | Area=131001 px² | Radius=208 px
+  Coin  9: Position=( 273,  234) | Area=131660 px² | Radius=207 px
+  Coin 10: Position=( 739,  235) | Area=129416 px² | Radius=206 px
+
+COORDINATE BOUNDS:
+  X Range: 269 - 1677 px
+  Y Range: 234 - 1177 px
+----------------------------------------------------------------------
