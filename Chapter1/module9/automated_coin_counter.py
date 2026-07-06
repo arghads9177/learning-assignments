@@ -7,11 +7,15 @@ import matplotlib.pyplot as plt
 
 
 class AutomatedCoinCounter:
+    """Detect and count coins in images using Otsu's thresholding and contour analysis."""
+
     def __init__(self, output_dir='./output_coins'):
+        """Initialize counter with output directory for results."""
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
     def load_or_generate_image(self, image_path=None, width=800, height=600):
+        """Load image from path or generate synthetic coin image for testing."""
         if image_path and os.path.exists(image_path):
             img = cv2.imread(image_path)
             if img is None:
@@ -20,6 +24,7 @@ class AutomatedCoinCounter:
         return self.generate_coin_image(width, height)
 
     def generate_coin_image(self, width=800, height=600):
+        """Generate synthetic coin image with realistic metallic effects and shadows."""
         img = np.ones((height, width, 3), dtype=np.uint8) * 180
 
         np.random.seed(42)
@@ -47,20 +52,24 @@ class AutomatedCoinCounter:
         return img
 
     def preprocess_image(self, img):
+        """Convert to grayscale and apply Gaussian blur for noise reduction."""
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (7, 7), 0)
         return gray, blurred
 
     def threshold_image(self, blurred):
+        """Apply Otsu's binary inversion thresholding to isolate coins as white silhouettes."""
         _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         return binary
 
     def apply_morphology(self, binary, kernel_size=9):
+        """Apply morphological closing to fill interior holes and shadow voids."""
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
         closed = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
         return closed
 
     def find_coins(self, binary, min_area=500):
+        """Detect coin contours, filter by area threshold, and calculate centroids using moments."""
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL,
                                        cv2.CHAIN_APPROX_SIMPLE)
 
@@ -87,6 +96,7 @@ class AutomatedCoinCounter:
         return coins
 
     def visualize_coins(self, img, coins, title_suffix=''):
+        """Draw circles around detected coins with centroids and coordinate labels."""
         result = img.copy()
 
         for coin in coins:
@@ -109,6 +119,7 @@ class AutomatedCoinCounter:
         return result
 
     def create_analysis_dashboard(self, img, binary, closed, result, coins):
+        """Generate 4-panel visualization showing the complete detection pipeline."""
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         fig.suptitle('Coin Counter: Complete Analysis Pipeline', fontsize=16, fontweight='bold')
 
@@ -134,6 +145,7 @@ class AutomatedCoinCounter:
         plt.close()
 
     def print_statistics(self, coins, img_shape):
+        """Print area and radius statistics with coin centroid locations to console."""
         print("\n" + "="*70)
         print("AUTOMATED COIN COUNTER - ANALYSIS REPORT")
         print("="*70)
@@ -166,6 +178,7 @@ class AutomatedCoinCounter:
         print("="*70 + "\n")
 
     def save_report(self, coins, img_shape, processing_time):
+        """Save detailed analysis report with statistics and coordinates to text file."""
         report_path = os.path.join(self.output_dir, 'coin_analysis_report.txt')
 
         with open(report_path, 'w') as f:
@@ -209,6 +222,7 @@ class AutomatedCoinCounter:
             f.write("-"*70 + "\n")
 
     def run_analysis(self, image_path=None, min_area=500, kernel_size=9):
+        """Execute complete coin detection pipeline and generate visualizations and reports."""
         import time
         start_time = time.time()
 
@@ -233,6 +247,7 @@ class AutomatedCoinCounter:
 
 
 def main():
+    """Parse command-line arguments and run coin counter analysis."""
     parser = argparse.ArgumentParser(
         description='Automated Coin Counter - Detect and count coins in images',
         formatter_class=argparse.RawDescriptionHelpFormatter,
