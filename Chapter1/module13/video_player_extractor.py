@@ -94,24 +94,34 @@ class VideoPlayerExtractor:
         out.release()
         return video_path
 
-    def load_video(self, video_path=None):
+    def load_video(self, video_path=None, use_webcam=False):
         """
-        Load video from file or generate synthetic test video.
+        Load video from file, webcam, or generate synthetic test video.
 
         Args:
             video_path (str): Path to video file. If None, generates synthetic video.
+            use_webcam (bool): If True, use webcam instead of video file. Default is False.
 
         Returns:
             tuple: (cap, video_path) where:
                 - cap: cv2.VideoCapture object for video
-                - video_path: Path to loaded video file
+                - video_path: Path to loaded video file or 'webcam'
 
         Notes:
             - Supports MP4, AVI, MOV, MKV, FLV and other formats
             - Returns VideoCapture object ready for frame reading
             - Automatically generates synthetic video if file not found
+            - Webcam mode uses default camera (device 0)
         """
-        if video_path and os.path.exists(video_path):
+        if use_webcam:
+            cap = cv2.VideoCapture(0)
+            if not cap.isOpened():
+                print("Warning: Webcam not available. Using synthetic video.")
+                video_path = self.generate_test_video()
+                cap = cv2.VideoCapture(video_path)
+            else:
+                video_path = 'webcam'
+        elif video_path and os.path.exists(video_path):
             cap = cv2.VideoCapture(video_path)
             if not cap.isOpened():
                 cap = cv2.VideoCapture(self.generate_test_video())
@@ -156,13 +166,14 @@ class VideoPlayerExtractor:
             'duration_seconds': duration_seconds
         }
 
-    def play_video(self, video_path=None, max_duration=None):
+    def play_video(self, video_path=None, max_duration=None, use_webcam=False):
         """
         Play video at native timing with frame information overlay.
 
         Args:
             video_path (str): Path to video file. If None, generates synthetic video.
             max_duration (float): Maximum playback duration in seconds. If None, plays full video.
+            use_webcam (bool): If True, capture from webcam instead of file. Default is False.
 
         Returns:
             dict: Video properties from playback session.
@@ -173,11 +184,14 @@ class VideoPlayerExtractor:
             - Press 'q' to quit, 'p' to pause/resume
             - Each frame shows native timing and frame counter
             - Window title shows current FPS
+            - For webcam, max_duration controls recording length
         """
-        cap, video_path = self.load_video(video_path)
+        cap, actual_video_path = self.load_video(video_path, use_webcam=use_webcam)
         props = self.get_video_properties(cap)
 
         fps = props['fps']
+        if fps == 0:
+            fps = 30  # Default for webcam or unknown sources
         frame_delay = int(1000 / fps) if fps > 0 else 30
         frame_idx = 0
         paused = False
@@ -201,16 +215,21 @@ class VideoPlayerExtractor:
 
                 # Add overlay information
                 display_frame = frame.copy()
-                cv2.putText(display_frame, f'Frame: {frame_idx + 1}/{props["frame_count"]}',
+                frame_text = f'Frame: {frame_idx + 1}'
+                if props['frame_count'] > 0:
+                    frame_text += f'/{props["frame_count"]}'
+
+                cv2.putText(display_frame, frame_text,
                            (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
                 cv2.putText(display_frame, f'Time: {frame_time:.2f}s',
                            (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
                 cv2.putText(display_frame, f'FPS: {fps:.1f}',
                            (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
                 cv2.putText(display_frame, 'Press q to quit, p to pause',
-                           (20, props["height"] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
+                           (20, display_frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
 
-                cv2.imshow(f'Video Player - {os.path.basename(video_path)}', display_frame)
+                window_title = 'Webcam' if use_webcam else f'Video Player - {os.path.basename(actual_video_path)}'
+                cv2.imshow(window_title, display_frame)
 
                 frame_idx += 1
 
@@ -229,7 +248,8 @@ class VideoPlayerExtractor:
 
         return props
 
-    def extract_frames(self, video_path=None, frame_interval=30, max_frames=None):
+    def extract_frames(self, video_path=None, frame_interval=30, max_frames=None, use_webcam=False,
+                       duration_seconds=None):
         """
         Extract frames from video at specified periodic intervals.
 
@@ -237,6 +257,8 @@ class VideoPlayerExtractor:
             video_path (str): Path to video file. If None, generates synthetic video.
             frame_interval (int): Extract every nth frame. Default is 30 (every 30th frame).
             max_frames (int): Maximum number of frames to extract. If None, extracts all.
+            use_webcam (bool): If True, capture from webcam. Default is False.
+            duration_seconds (float): For webcam, capture duration in seconds. If None, uses max_frames.
 
         Returns:
             list: List of extracted frame image arrays.
@@ -246,18 +268,26 @@ class VideoPlayerExtractor:
             - frame_interval=30 extracts every 30th frame
             - Saves extracted frames as numbered PNG files
             - Returns list of numpy arrays for programmatic access
+            - For webcam: duration_seconds or max_frames controls capture length
             - Useful for creating training datasets with sparse sampling
         """
-        cap, _ = self.load_video(video_path)
+        cap, _ = self.load_video(video_path, use_webcam=use_webcam)
 
         extracted_frames = []
         frame_count = 0
         extracted_count = 0
+        start_time = time.time()
 
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
+
+            # Check duration limit for webcam
+            if use_webcam and duration_seconds:
+                elapsed = time.time() - start_time
+                if elapsed > duration_seconds:
+                    break
 
             # Extract frame at specified interval
             if frame_count % frame_interval == 0:
@@ -438,7 +468,8 @@ class VideoPlayerExtractor:
             f.write("=" * 70 + "\n")
 
     def run_analysis(self, video_path=None, frame_interval=30, play_video=True,
-                     extract_frames_flag=True, max_frames=None):
+                     extract_frames_flag=True, max_frames=None, use_webcam=False,
+                     webcam_duration=5):
         """
         Execute complete video analysis pipeline with playback and frame extraction.
 
@@ -448,6 +479,8 @@ class VideoPlayerExtractor:
             play_video (bool): Play video during analysis. Default is True.
             extract_frames_flag (bool): Extract and save frames. Default is True.
             max_frames (int): Maximum frames to extract. If None, extracts all.
+            use_webcam (bool): If True, use webcam instead of video file. Default is False.
+            webcam_duration (float): Duration for webcam capture in seconds. Default is 5.
 
         Returns:
             tuple: (extracted_frames, props) where:
@@ -455,27 +488,37 @@ class VideoPlayerExtractor:
                 - props: Dictionary of video properties
 
         Notes:
-            - Loads or generates test video
+            - Loads or generates test video (or captures from webcam)
             - Optionally plays video with frame overlay
             - Optionally extracts frames at specified intervals
             - Saves all extracted frames as PNG files
             - Creates visualization dashboard
             - Generates detailed analysis report
+            - For webcam: automatically extracts frames during playback
         """
         # Load video
-        cap, actual_video_path = self.load_video(video_path)
+        cap, actual_video_path = self.load_video(video_path, use_webcam=use_webcam)
         properties = self.get_video_properties(cap)
         cap.release()
 
         # Play video if requested
         if play_video:
-            print("\nPlaying video... (press 'q' to quit, 'p' to pause)")
-            self.play_video(actual_video_path)
+            if use_webcam:
+                print(f"\nCapturing from webcam for {webcam_duration} seconds...")
+                print("(press 'q' to quit, 'p' to pause)")
+            else:
+                print("\nPlaying video... (press 'q' to quit, 'p' to pause)")
+            self.play_video(actual_video_path, max_duration=webcam_duration if use_webcam else None,
+                          use_webcam=use_webcam)
 
         # Extract frames if requested
         extracted_frames = []
         if extract_frames_flag:
-            extracted_frames = self.extract_frames(actual_video_path, frame_interval, max_frames)
+            extracted_frames = self.extract_frames(
+                actual_video_path, frame_interval, max_frames,
+                use_webcam=use_webcam,
+                duration_seconds=webcam_duration if use_webcam else None
+            )
 
         # Create visualization
         if extracted_frames:
@@ -499,6 +542,14 @@ def main():
     parser.add_argument(
         '--video', type=str, default=None,
         help='Path to video file (MP4, AVI, MOV, MKV, FLV)'
+    )
+    parser.add_argument(
+        '--webcam', action='store_true', default=False,
+        help='Use webcam instead of video file'
+    )
+    parser.add_argument(
+        '--webcam-duration', type=float, default=5,
+        help='Duration for webcam capture in seconds (default: 5)'
     )
     parser.add_argument(
         '--frame-interval', type=int, default=30,
@@ -531,6 +582,11 @@ def main():
 
     args = parser.parse_args()
 
+    # Validate arguments
+    if args.webcam and args.video:
+        print("Error: Cannot use both --webcam and --video. Choose one.")
+        return
+
     if args.output_dir:
         extractor = VideoPlayerExtractor(args.output_dir)
     else:
@@ -542,7 +598,9 @@ def main():
         frame_interval=args.frame_interval,
         play_video=args.play,
         extract_frames_flag=args.extract,
-        max_frames=args.max_frames
+        max_frames=args.max_frames,
+        use_webcam=args.webcam,
+        webcam_duration=args.webcam_duration
     )
 
 
