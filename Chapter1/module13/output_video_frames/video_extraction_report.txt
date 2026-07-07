@@ -1,0 +1,38 @@
+======================================================================
+VIDEO PLAYER & FRAME EXTRACTOR - ANALYSIS REPORT
+======================================================================
+
+Report Generated: 2026-07-07 12:35:36
+
+VIDEO PROPERTIES:
+  Resolution: 640×480 pixels
+  Total Frames: -1
+  Frames Per Second: 30.00
+  Duration: -0.03 seconds
+
+EXTRACTION PARAMETERS:
+  Frame Interval: 30 (every 30th frame)
+  Total Extracted: 5 frames
+  Extraction Ratio: 1/30
+
+DATASET INFORMATION:
+  Frame Size: 640×480×3 pixels
+  Frame File Size: ~0.88 MB (PNG)
+  Total Dataset Size: ~4.39 MB
+
+OUTPUT FILES:
+  - frame_000000.png to frame_xxxxxx.png: Extracted frames
+  - extraction_dashboard.png: 4×4 grid visualization
+  - video_extraction_report.txt: This report
+
+FRAME NUMBERING SCHEME:
+  - Files named: frame_XXXXXX.png (6-digit zero-padded)
+  - Frame 0 corresponds to video frame: 0
+  - Frame 1 corresponds to video frame: 30
+  - Frame N corresponds to video frame: N × 30
+
+KEY CONCEPTS:
+  - Native Timing: Video plays at original FPS
+  - Frame Extraction: Periodic sampling for dataset creation
+  - Dataset Compilation: Selected frames form training dataset
+======================================================================
