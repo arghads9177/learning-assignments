@@ -98,9 +98,9 @@ def test_custom_images():
 
 
 def test_logo_resizing():
-    """Test logo resizing when exceeding 30% of background area."""
+    """Test logo resizing with default and custom thresholds."""
     print("\n" + "="*70)
-    print("TEST 4: Logo Resizing")
+    print("TEST 4: Logo Resizing (Dynamic Threshold)")
     print("="*70)
 
     overlay = LogoOverlayUtility('./test_output_logo_resize')
@@ -109,24 +109,37 @@ def test_logo_resizing():
     bg_shape = (400, 600, 3)
     background = np.ones(bg_shape, dtype=np.uint8) * 200
 
-    # Create large logo (>30% of background)
-    logo_h, logo_w = 300, 400  # 45% of background area
+    # Create large logo (45% of background)
+    logo_h, logo_w = 300, 400
     large_logo = np.ones((logo_h, logo_w, 3), dtype=np.uint8) * 100
 
-    # Test resizing
-    resized = overlay.resize_logo_if_needed(large_logo, background)
+    # Test 1: Default 30% threshold
+    resized_30 = overlay.resize_logo_if_needed(large_logo, background, threshold_percentage=30)
+    assert resized_30 is not None, "Resizing returned None"
+    assert resized_30.shape[0] <= logo_h and resized_30.shape[1] <= logo_w, "Logo not resized"
 
-    assert resized is not None, "Resizing returned None"
-    assert resized.shape[0] <= logo_h and resized.shape[1] <= logo_w, "Logo not resized"
+    resized_pct_30 = (resized_30.shape[0] * resized_30.shape[1]) / (bg_shape[0] * bg_shape[1]) * 100
+    assert resized_pct_30 <= 31, f"Resized logo exceeds 30%: {resized_pct_30:.1f}%"
 
-    # Calculate percentage after resize
-    resized_percentage = (resized.shape[0] * resized.shape[1]) / (bg_shape[0] * bg_shape[1]) * 100
-    assert resized_percentage <= 31, f"Resized logo exceeds 30%: {resized_percentage:.1f}%"
+    # Test 2: Higher threshold (50%)
+    resized_50 = overlay.resize_logo_if_needed(large_logo, background, threshold_percentage=50)
+    assert resized_50.shape[0] >= resized_30.shape[0], "50% threshold should allow larger logo"
 
-    print("\n✓ Test 4 PASSED: Logo resizing works correctly")
-    print(f"  - Original logo: {large_logo.shape}")
-    print(f"  - Resized logo: {resized.shape}")
-    print(f"  - Area coverage: {resized_percentage:.2f}% of background")
+    resized_pct_50 = (resized_50.shape[0] * resized_50.shape[1]) / (bg_shape[0] * bg_shape[1]) * 100
+    assert resized_pct_50 <= 51, f"Resized logo exceeds 50%: {resized_pct_50:.1f}%"
+
+    # Test 3: Lower threshold (20%)
+    resized_20 = overlay.resize_logo_if_needed(large_logo, background, threshold_percentage=20)
+    assert resized_20.shape[0] <= resized_30.shape[0], "20% threshold should result in smaller logo"
+
+    resized_pct_20 = (resized_20.shape[0] * resized_20.shape[1]) / (bg_shape[0] * bg_shape[1]) * 100
+    assert resized_pct_20 <= 21, f"Resized logo exceeds 20%: {resized_pct_20:.1f}%"
+
+    print("\n✓ Test 4 PASSED: Dynamic threshold resizing works correctly")
+    print(f"  - Original logo: {large_logo.shape} ({45:.1f}% of background)")
+    print(f"  - 20% threshold: {resized_20.shape} → {resized_pct_20:.2f}% coverage")
+    print(f"  - 30% threshold: {resized_30.shape} → {resized_pct_30:.2f}% coverage")
+    print(f"  - 50% threshold: {resized_50.shape} → {resized_pct_50:.2f}% coverage")
 
 
 def test_mask_operations():

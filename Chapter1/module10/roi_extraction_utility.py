@@ -497,9 +497,9 @@ class ROIExtractionUtility:
 
         # Default coordinates from test image
         if face_coords is None:
-            face_coords = (150, 80, 120, 150)
+            face_coords = (150, 80, 1000, 1500)
         if circle_coords is None:
-            circle_coords = (480, 100, 60)
+            circle_coords = (480, 800, 100)
         if polygon_coords is None:
             polygon_coords = [[50, 250], [150, 300], [100, 380], [50, 350]]
 

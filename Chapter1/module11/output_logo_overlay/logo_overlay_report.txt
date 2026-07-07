@@ -1,0 +1,51 @@
+======================================================================
+LOGO OVERLAY UTILITY - DETAILED ANALYSIS REPORT
+======================================================================
+
+Report Generated: 2026-07-07 09:41:09
+
+IMAGE DIMENSIONS:
+  Background Resolution: 1920×1359 pixels
+  Logo Dimensions: 884×884 pixels
+  Logo Area Coverage: 29.95% of background
+
+PLACEMENT INFORMATION:
+  Logo Position (Top-Left): (10, 10)
+  Right Edge: 894 pixels
+  Bottom Edge: 894 pixels
+
+PROCESSING PIPELINE:
+  1. Load or generate background and logo images
+  2. Resize logo if area exceeds 30% of background
+  3. Isolate ROI from background matching logo dimensions
+  4. Create high-contrast binary mask from logo
+  5. Create inverse mask using cv2.bitwise_not
+  6. Clear logo geometry from background ROI
+  7. Isolate logo colors (background becomes black)
+  8. Blend cleared ROI and isolated logo using cv2.add
+  9. Inject composite patch back into background
+
+OUTPUT FILES:
+  - background_original.png: Input background image
+  - logo_original.png: Input logo image
+  - logo_resized.png: Resized logo (if needed)
+  - roi_extracted.png: Extracted background ROI
+  - binary_mask.png: Logo binary mask (255=logo, 0=bg)
+  - inverse_mask.png: Inverse mask (0=logo, 255=bg)
+  - cleared_roi.png: Background ROI with logo area cleared
+  - isolated_logo.png: Logo with isolated colors
+  - blended_composite.png: Blended composite patch
+  - final_overlay.png: Final result with logo overlaid
+  - logo_overlay_dashboard.png: 4×2 pipeline visualization
+  - logo_overlay_report.txt: This report
+
+KEY CONCEPTS:
+  Binary Masking: High-contrast mask isolates logo geometry precisely
+  Inverse Mask: Used to clear logo area from background safely
+  Bitwise Operations: cv2.bitwise_and selectively copies pixels
+  Image Addition: cv2.add blends cleared background and isolated logo
+  No Framing: Result contains no rectangular box artifacts
+
+PERFORMANCE:
+  Total Processing Time: 16.420 seconds
+======================================================================

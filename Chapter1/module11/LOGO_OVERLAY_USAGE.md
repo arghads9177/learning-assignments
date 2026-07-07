@@ -95,12 +95,22 @@ python logo_overlay_utility.py \
     --position 200 150
 ```
 
+#### **With Custom Resize Threshold**
+```bash
+# Keep logos up to 50% of background (default is 30%)
+python logo_overlay_utility.py \
+    --background background.jpg \
+    --logo logo.png \
+    --resize-threshold 50
+```
+
 #### **Complete Example with All Options**
 ```bash
 python logo_overlay_utility.py \
     --background /path/to/background.jpg \
     --logo /path/to/logo.png \
     --position 300 250 \
+    --resize-threshold 25 \
     --output-dir ./overlay_results
 ```
 
@@ -111,7 +121,37 @@ python logo_overlay_utility.py \
 | `--background` | path | None | Path to background image (JPG, PNG, BMP, TIFF) |
 | `--logo` | path | None | Path to logo image (JPG, PNG, BMP, TIFF) |
 | `--position` | x y | 100 100 | Logo placement coordinates (top-left corner) |
+| `--resize-threshold` | float | 30 | Max logo area as % of background before resizing (range: 1-99) |
 | `--output-dir` | path | ./output_logo_overlay | Directory for all output files |
+
+## Resize Threshold Parameter
+
+The `--resize-threshold` parameter controls the maximum allowed logo size relative to the background image. If the logo exceeds this percentage, it is automatically resized.
+
+### Threshold Selection Guide
+
+| Threshold | Behavior | Use Case |
+|-----------|----------|----------|
+| 10-20% | Logo significantly smaller than background | Watermarks, small branding |
+| 25-30% | Logo prominent but not dominant (default) | Standard overlays, logos |
+| 40-50% | Logo quite large, fills significant space | Feature images, focal points |
+| 60%+ | Logo very large, limited resizing | Special effects, focus objects |
+
+### Examples
+
+```bash
+# Tight control - watermark-style (20% max)
+python logo_overlay_utility.py --background bg.jpg --logo logo.png --resize-threshold 20
+
+# Standard overlay (30% max, default)
+python logo_overlay_utility.py --background bg.jpg --logo logo.png --resize-threshold 30
+
+# Large logo feature (50% max)
+python logo_overlay_utility.py --background bg.jpg --logo logo.png --resize-threshold 50
+
+# No automatic resizing (99% max)
+python logo_overlay_utility.py --background bg.jpg --logo logo.png --resize-threshold 99
+```
 
 ## Output Files
 
@@ -213,6 +253,22 @@ result = overlay.run_analysis(
 cv2.imwrite('final_result.png', result)
 ```
 
+### Custom Resize Threshold
+
+```python
+from logo_overlay_utility import LogoOverlayUtility
+
+overlay = LogoOverlayUtility(output_dir='./results')
+
+# Allow logo up to 50% of background (instead of default 30%)
+result = overlay.run_analysis(
+    background_path='background.jpg',
+    logo_path='logo.png',
+    position=(100, 100),
+    resize_threshold=50  # Allow larger logos
+)
+```
+
 ### Manual Pipeline Control
 
 ```python
@@ -225,8 +281,8 @@ overlay = LogoOverlayUtility()
 background = cv2.imread('background.jpg')
 logo = cv2.imread('logo.png')
 
-# Resize if needed
-logo = overlay.resize_logo_if_needed(logo, background)
+# Resize if needed (with custom threshold)
+logo = overlay.resize_logo_if_needed(logo, background, threshold_percentage=25)
 
 # Isolate ROI
 roi, position = overlay.isolate_roi(background, logo, position=(100, 100))
@@ -337,6 +393,41 @@ result = overlay.run_analysis(
     background_path='background.jpg',
     logo_path='logo.png',
     position=position
+)
+```
+
+### Example 5: Threshold-Based Sizing
+
+**Scenario:** Different resize thresholds for different purposes
+
+```python
+from logo_overlay_utility import LogoOverlayUtility
+
+# Watermark (small, 15% max)
+overlay_watermark = LogoOverlayUtility('./watermark_results')
+watermark = overlay_watermark.run_analysis(
+    background_path='photo.jpg',
+    logo_path='logo.png',
+    position=(700, 550),
+    resize_threshold=15
+)
+
+# Standard overlay (30% max, default)
+overlay_standard = LogoOverlayUtility('./overlay_results')
+overlay_std = overlay_standard.run_analysis(
+    background_path='photo.jpg',
+    logo_path='logo.png',
+    position=(100, 100),
+    resize_threshold=30
+)
+
+# Feature image (50% max)
+overlay_feature = LogoOverlayUtility('./feature_results')
+feature = overlay_feature.run_analysis(
+    background_path='photo.jpg',
+    logo_path='logo.png',
+    position=(150, 150),
+    resize_threshold=50
 )
 ```
 

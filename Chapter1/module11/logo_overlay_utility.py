@@ -93,30 +93,33 @@ class LogoOverlayUtility:
 
         return background, logo
 
-    def resize_logo_if_needed(self, logo_img, background_img):
+    def resize_logo_if_needed(self, logo_img, background_img, threshold_percentage=30):
         """
-        Resize logo if it exceeds 30% of background image area.
+        Resize logo if it exceeds specified percentage of background image area.
 
         Args:
             logo_img (np.ndarray): Logo image in BGR format (height, width, 3).
             background_img (np.ndarray): Background image in BGR format.
+            threshold_percentage (float): Maximum allowed logo area as % of background.
+                Default is 30. Logo is resized to this percentage if exceeded.
 
         Returns:
             np.ndarray: Resized logo image (if needed) or original logo.
 
         Notes:
             - Calculates logo area percentage relative to background dimensions
-            - Resizes to exactly 30% of background dimensions if exceeded
+            - Resizes to exactly threshold_percentage of background if exceeded
             - Uses cv2.INTER_AREA for downsampling quality
             - Maintains aspect ratio during resize
+            - threshold_percentage valid range: 1-99 (typical: 20-40)
         """
         logo_h, logo_w = logo_img.shape[:2]
         bg_h, bg_w = background_img.shape[:2]
 
         logo_percentage = (logo_h * logo_w) / (bg_h * bg_w) * 100
 
-        if logo_percentage > 30:
-            target_area = (bg_h * bg_w) * 0.30
+        if logo_percentage > threshold_percentage:
+            target_area = (bg_h * bg_w) * (threshold_percentage / 100)
             scale_factor = np.sqrt(target_area / (logo_h * logo_w))
             new_w = int(logo_w * scale_factor)
             new_h = int(logo_h * scale_factor)
@@ -274,7 +277,8 @@ class LogoOverlayUtility:
         result[y:y + patch_h, x:x + patch_w] = composite_patch
         return result
 
-    def run_analysis(self, background_path=None, logo_path=None, position=(100, 100)):
+    def run_analysis(self, background_path=None, logo_path=None, position=(100, 100),
+                     resize_threshold=30):
         """
         Execute complete logo overlay pipeline with visualization and reporting.
 
@@ -282,13 +286,15 @@ class LogoOverlayUtility:
             background_path (str): Path to background image file. If None, generates synthetic.
             logo_path (str): Path to logo image file. If None, generates synthetic.
             position (tuple): (x, y) coordinates for logo placement on background.
+            resize_threshold (float): Maximum logo area as % of background before resizing.
+                Default is 30. Valid range: 1-99. Typical values: 20-40.
 
         Returns:
             np.ndarray: Final composite image with logo overlaid on background.
 
         Notes:
             - Loads or generates test images
-            - Resizes logo if >30% of background area
+            - Resizes logo if exceeds resize_threshold percentage of background area
             - Creates binary mask and inverse mask
             - Clears logo region from background ROI
             - Isolates logo colors
@@ -319,7 +325,7 @@ class LogoOverlayUtility:
         cv2.imwrite(os.path.join(self.output_dir, 'logo_original.png'), logo)
 
         # Resize logo if needed
-        logo = self.resize_logo_if_needed(logo, background)
+        logo = self.resize_logo_if_needed(logo, background, resize_threshold)
         cv2.imwrite(os.path.join(self.output_dir, 'logo_resized.png'), logo)
 
         # Isolate ROI from background
@@ -567,6 +573,10 @@ def main():
         help='Logo placement position (x, y) - default: 100 100'
     )
     parser.add_argument(
+        '--resize-threshold', type=float, default=30,
+        help='Max logo area as %% of background before resizing (default: 30, range: 1-99)'
+    )
+    parser.add_argument(
         '--output-dir', type=str, default=None,
         help='Output directory for results'
     )
@@ -582,7 +592,8 @@ def main():
     overlay.run_analysis(
         background_path=args.background,
         logo_path=args.logo,
-        position=tuple(args.position)
+        position=tuple(args.position),
+        resize_threshold=args.resize_threshold
     )
 
 

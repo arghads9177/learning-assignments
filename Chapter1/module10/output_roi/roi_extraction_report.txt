@@ -1,0 +1,69 @@
+======================================================================
+ROI EXTRACTION - DETAILED ANALYSIS REPORT
+======================================================================
+Generated: 2026-07-07 08:59:37
+----------------------------------------------------------------------
+
+EXTRACTION METHODS:
+
+1. FACE ROI (BOUNDING BOX SLICING)
+   Algorithm: Coordinate-based array slicing
+   Code: face = img[y:y+h, x:x+w]
+   Output Dimensions: 1000x1500 pixels
+   Speed: O(w*h) - Very fast
+   Use Cases:
+   - Face detection and recognition
+   - Object tracking with bounding boxes
+   - License plate detection
+   Advantages:
+   - Simple and fast
+   - No mask computation needed
+   - Preserves original colors
+   Limitations:
+   - Only rectangular regions
+   - Includes background in corners
+
+2. CIRCULAR ROI (VIGNETTE ISOLATION)
+   Algorithm: Circle mask + bitwise AND
+   Code: cv2.circle(mask, center, radius, 255, -1)
+         roi = cv2.bitwise_and(img, img, mask=mask)
+   Non-zero Pixels: 30355
+   Speed: O(w*h) - Fast
+   Use Cases:
+   - Iris/pupil detection
+   - Attention mechanism visualization
+   - Spotlight and vignette effects
+   Advantages:
+   - Circular precision
+   - Soft edge capability (vignette)
+   - Efficient mask reuse
+   Variations:
+   - Gradient mask for fade effect
+   - Elliptical mask for eyes
+
+3. POLYGON ROI (IRREGULAR SEGMENT)
+   Algorithm: Polygon mask + bitwise AND
+   Code: cv2.fillPoly(mask, [vertices], 255)
+         roi = cv2.bitwise_and(img, img, mask=mask)
+   Non-zero Pixels: 7936
+   Speed: O(w*h) - Fast
+   Use Cases:
+   - Road lane detection
+   - Building/roof detection
+   - Semantic segmentation
+   Advantages:
+   - Arbitrary polygon shapes
+   - Precise boundary control
+   - Multiple vertices support
+   Vertex Ordering:
+   - Clockwise or counter-clockwise both work
+   - Order determines fill direction
+   - Closed polygon (last connects to first)
+
+----------------------------------------------------------------------
+COMPARISON:
+Method          | Speed | Precision | Flexibility | Boundaries
+Face (Box)      | Fast  | Lower     | Low         | Sharp
+Circular        | Fast  | High      | Medium      | Smooth
+Polygon         | Fast  | Highest   | High        | Precise
+----------------------------------------------------------------------
