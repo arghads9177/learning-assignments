@@ -8,3 +8,21 @@ Pillow>=10.4.0
 
 # Visualization and Matrix Inspection
 matplotlib>=3.9.2
+
+# Data Processing and Analysis
+pandas>=2.0.0
+seaborn>=0.13.0
+
+# Progress Bars and Utility
+tqdm>=4.66.0
+
+# Jupyter Notebook Support
+jupyter>=1.0.0
+ipykernel>=6.26.0
+
+# Machine Learning and Model Evaluation
+scikit-learn>=1.3.0
+
+# NOTE: TensorFlow is pre-installed on Google Colab
+# For local training, install with: pip install tensorflow>=2.13.0
+# But it's not in requirements.txt as it's heavy and only needed for Colab training

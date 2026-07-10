@@ -8,3 +8,35 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Dataset folders (do not commit large image files)
+**/dataset/raw/
+**/dataset/processed/
+**/dataset/splits/
+dataset/
+
+# Large files and model outputs
+*.h5
+*.pkl
+*.pth
+*.pt
+*.model
+savedmodel/
+checkpoints/
+logs/
+
+# Jupyter notebook artifacts
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
