@@ -23,6 +23,11 @@ ipykernel>=6.26.0
 # Machine Learning and Model Evaluation
 scikit-learn>=1.3.0
 
-# NOTE: TensorFlow is pre-installed on Google Colab
-# For local training, install with: pip install tensorflow>=2.13.0
-# But it's not in requirements.txt as it's heavy and only needed for Colab training
+# Deep Learning Framework - PyTorch
+torch>=2.0.0
+torchvision>=0.15.0
+
+# NOTE: PyTorch is pre-installed on Google Colab
+# For local training, PyTorch can be installed via conda or pip
+# For CPU-only: pip install torch torchvision torchaudio
+# For GPU: https://pytorch.org/get-started/locally/
